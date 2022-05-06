@@ -69,6 +69,11 @@ def book_page_focus():
     image_url = extract_product_information(book_img, 1)
     review_rating = convert_rating(review_rating)
 
+    image_url = image_url[0]
+    image_url = image_url.replace('../..', 'http://books.toscrape.com')
+    image_url = [image_url]
+    print(image_url)
+
     #remove text from "number_available" and keep number
     number_available = number_available[0].text
     number_available = number_available.replace('In stock (', '')
