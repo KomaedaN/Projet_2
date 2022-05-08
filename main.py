@@ -11,6 +11,9 @@ def extract_product_information(elements, choice):
     elif choice == 2:
         for element in elements:
             result.append(element.string)
+    elif choice == 3:
+        for url in elements:
+            result.append(url['href'])
     print(result)
     return result
 
@@ -31,11 +34,29 @@ def convert_rating(elements):
     return elements
 
 #load all data inside "data.csv" file
-def load_data(file_name, column, title, UPC, including, excluding, available, description, category, img, rating):
+def load_data(file_name,
+              column,
+              title,
+              UPC,
+              including,
+              excluding,
+              available,
+              description,
+              category,
+              img,
+              rating):
     with open(file_name, 'w') as file_csv:
         writer = csv.writer(file_csv, delimiter=',')
         writer.writerow(column)
-        for titles, upc, priceI, priceE, stock, text, cate, url, note in zip(title, UPC, including, excluding, available, description, category, img, rating):
+        for titles, upc, priceI, priceE, stock, text, cate, url, note in zip(title,
+                                                                             UPC,
+                                                                             including,
+                                                                             excluding,
+                                                                             available,
+                                                                             description,
+                                                                             category,
+                                                                             img,
+                                                                             rating):
             writer.writerow([titles, upc, priceI, priceE, stock, text, cate, url, note])
 
 def book_page_focus():
@@ -69,10 +90,11 @@ def book_page_focus():
     image_url = extract_product_information(book_img, 1)
     review_rating = convert_rating(review_rating)
 
+    #add domain link to "image_url"
     image_url = image_url[0]
     image_url = image_url.replace('../..', 'http://books.toscrape.com')
     image_url = [image_url]
-    print(image_url)
+    #print(image_url)
 
     #remove text from "number_available" and keep number
     number_available = number_available[0].text
@@ -80,10 +102,51 @@ def book_page_focus():
     number_available = number_available.replace('available)', '')
     number_available = int(number_available)
     number_available = [number_available]
-    print(number_available)
+    #print(number_available)
     column = ["title", "universal_product_code", "price_including_tax", "price_excluding_tax", "number_available", "product_description", "category", "image_url", "review_rating"]
     load_data("data.csv", column, title, universal_product_code, price_including_tax, price_excluding_tax, number_available, product_description, category, image_url, review_rating)
 
-book_page_focus()
+def get_category_url(category):
+    url = 'http://books.toscrape.com/catalogue/category/books/' + category +'/index.html'
+    response = requests.get(url)
+    page = response.content
+
+    soup = BeautifulSoup(page, 'html.parser')
+    next = soup.select('ul.pager')
+
+    if next == []:
+        category_url = 'http://books.toscrape.com/catalogue/category/books/' + category + '/index.html'
+    else:
+        category_url = 'http://books.toscrape.com/catalogue/category/books/' + category + '/page-1.html'
+    return category_url
+poetry = get_category_url('romance_8')
+
+def historical_fiction_books(category):
+    url = category
+    response = requests.get(url)
+    page = response.content
+
+    soup = BeautifulSoup(page, 'html.parser')
+
+    links = []
+
+    books_url = soup.select('article.product_pod')
+
+    for book in books_url:
+        link = book.find('a')["href"]
+        link = link.replace('../../..', 'http://books.toscrape.com/catalogue')
+        links.append(link)
+
+    return links
+#url = historical_fiction_books('romance', '_8')
+
+
+
+
+
+
+
+
+#book_page_focus()
 
 
