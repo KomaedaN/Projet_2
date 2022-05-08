@@ -14,7 +14,6 @@ def extract_product_information(elements, choice):
     elif choice == 3:
         for url in elements:
             result.append(url['href'])
-    print(result)
     return result
 
 #convert "review_rating" from string to number
@@ -45,7 +44,7 @@ def load_data(file_name,
               category,
               img,
               rating):
-    with open(file_name, 'w') as file_csv:
+    with open(file_name, 'a') as file_csv:
         writer = csv.writer(file_csv, delimiter=',')
         writer.writerow(column)
         for titles, upc, priceI, priceE, stock, text, cate, url, note in zip(title,
@@ -59,9 +58,9 @@ def load_data(file_name,
                                                                              rating):
             writer.writerow([titles, upc, priceI, priceE, stock, text, cate, url, note])
 
-def book_page_focus():
+def book_page_focus(book_url):
     #link of the page
-    url = "http://books.toscrape.com/catalogue/a-light-in-the-attic_1000/index.html"
+    url = book_url
     response = requests.get(url)
     page = response.content
 
@@ -94,7 +93,6 @@ def book_page_focus():
     image_url = image_url[0]
     image_url = image_url.replace('../..', 'http://books.toscrape.com')
     image_url = [image_url]
-    #print(image_url)
 
     #remove text from "number_available" and keep number
     number_available = number_available[0].text
@@ -164,8 +162,9 @@ def get_category_dict(name_category):
         i = int(i) + 1
     return dict_category[name_category]
 
-#def get_a_book_link(list_from_all_book):
-    #while list_from_all_book !=
+def get_a_book_link(list_from_all_book):
+    for i in range (len(list_from_all_book)):
+        book_page_focus(list_from_all_book[i])
 
 
 
@@ -174,18 +173,6 @@ choice = input("quelle catégorie voulez vous récupérer?:\n")
 category_dict = get_category_dict(choice)
 category_url = get_category_url(category_dict)
 all_books_from_category = get_all_books_from_category(category_url)
-
-print(all_books_from_category)
-
-#url = historical_fiction_books('romance', '_8')
-
-
-
-
-
-
-
-
-#book_page_focus()
+get_a_book_link(all_books_from_category)
 
 
