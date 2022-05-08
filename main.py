@@ -119,9 +119,10 @@ def get_category_url(category):
     else:
         category_url = 'http://books.toscrape.com/catalogue/category/books/' + category + '/page-1.html'
     return category_url
-poetry = get_category_url('romance_8')
 
-def historical_fiction_books(category):
+
+
+def get_all_books_from_category(category):
     url = category
     response = requests.get(url)
     page = response.content
@@ -138,6 +139,44 @@ def historical_fiction_books(category):
         links.append(link)
 
     return links
+
+def get_category_dict(name_category):
+    url = "http://books.toscrape.com/catalogue/category/books_1/index.html"
+    response = requests.get(url)
+    page = response.content
+
+    soup = BeautifulSoup(page, "html.parser")
+
+    dict_category = {}
+    category_path = soup.select('ul > li > ul > li')
+    i = 2
+    for category in category_path:
+        link_category = category.find('a')['href']
+        link_category = link_category.replace('../books/', '')
+        link_category = link_category.replace('/index.html', '')
+        # create the key as the name of category
+        key_category = link_category.replace('_', '')
+        i = str(i)
+        key_category = key_category.replace(i, '')
+        # assign the category to the good key
+        dict_category[key_category] = link_category
+        # add 1 to i for the next iteration of the loop
+        i = int(i) + 1
+    return dict_category[name_category]
+
+#def get_a_book_link(list_from_all_book):
+    #while list_from_all_book !=
+
+
+
+
+choice = input("quelle catégorie voulez vous récupérer?:\n")
+category_dict = get_category_dict(choice)
+category_url = get_category_url(category_dict)
+all_books_from_category = get_all_books_from_category(category_url)
+
+print(all_books_from_category)
+
 #url = historical_fiction_books('romance', '_8')
 
 
