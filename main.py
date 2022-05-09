@@ -32,9 +32,16 @@ def convert_rating(elements):
         elements = [0]
     return elements
 
+def create_csv_column(file_name):
+    column = ["title", "universal_product_code", "price_including_tax", "price_excluding_tax", "number_available",
+              "product_description", "category", "image_url", "review_rating"]
+    with open(file_name, 'w', encoding="utf-8") as file_csv:
+        writer = csv.writer(file_csv, delimiter=',')
+        writer.writerow(column)
+
+
 #load all data inside "data.csv" file
 def load_data(file_name,
-              column,
               title,
               UPC,
               including,
@@ -44,9 +51,8 @@ def load_data(file_name,
               category,
               img,
               rating):
-    with open(file_name, 'a') as file_csv:
+    with open(file_name, 'a', encoding="utf-8") as file_csv:
         writer = csv.writer(file_csv, delimiter=',')
-        writer.writerow(column)
         for titles, upc, priceI, priceE, stock, text, cate, url, note in zip(title,
                                                                              UPC,
                                                                              including,
@@ -60,6 +66,7 @@ def load_data(file_name,
 
 def book_page_focus(book_url):
     #link of the page
+
     url = book_url
     response = requests.get(url)
     page = response.content
@@ -101,8 +108,8 @@ def book_page_focus(book_url):
     number_available = int(number_available)
     number_available = [number_available]
     #print(number_available)
-    column = ["title", "universal_product_code", "price_including_tax", "price_excluding_tax", "number_available", "product_description", "category", "image_url", "review_rating"]
-    load_data("data.csv", column, title, universal_product_code, price_including_tax, price_excluding_tax, number_available, product_description, category, image_url, review_rating)
+
+    load_data("data.csv", title, universal_product_code, price_including_tax, price_excluding_tax, number_available, product_description, category, image_url, review_rating)
 
 def get_category_url(category):
     url = 'http://books.toscrape.com/catalogue/category/books/' + category +'/index.html'
@@ -111,32 +118,46 @@ def get_category_url(category):
 
     soup = BeautifulSoup(page, 'html.parser')
     next = soup.select('ul.pager')
+    category_url = []
 
     if next == []:
-        category_url = 'http://books.toscrape.com/catalogue/category/books/' + category + '/index.html'
+        category_url[0] = 'http://books.toscrape.com/catalogue/category/books/' + category + '/index.html'
     else:
-        category_url = 'http://books.toscrape.com/catalogue/category/books/' + category + '/page-1.html'
+        number_of_page = soup.find('li', class_='current')
+        number_of_page = number_of_page.text
+        number_of_page = number_of_page.replace('Page 1 of', '')
+        number_of_page = int(number_of_page)
+        #category_url = 'http://books.toscrape.com/catalogue/category/books/' + category + '/page-1.html'
+        for i in range(1, number_of_page+1):
+            index_page = str(i)
+            category_url.append('http://books.toscrape.com/catalogue/category/books/' + category + '/page-' + index_page + '.html')
     return category_url
 
 
 
-def get_all_books_from_category(category):
-    url = category
-    response = requests.get(url)
-    page = response.content
 
-    soup = BeautifulSoup(page, 'html.parser')
+
+def get_all_books_from_category(category):
 
     links = []
+    for i in range(len(category)):
+        url = category[i]
 
-    books_url = soup.select('article.product_pod')
+        response = requests.get(url)
+        page = response.content
 
-    for book in books_url:
-        link = book.find('a')["href"]
-        link = link.replace('../../..', 'http://books.toscrape.com/catalogue')
-        links.append(link)
+        soup = BeautifulSoup(page, 'html.parser')
 
+
+
+        books_url = soup.select('article.product_pod')
+
+        for book in books_url:
+            link = book.find('a')["href"]
+            link = link.replace('../../..', 'http://books.toscrape.com/catalogue')
+            links.append(link)
     return links
+
 
 def get_category_dict(name_category):
     url = "http://books.toscrape.com/catalogue/category/books_1/index.html"
@@ -163,12 +184,12 @@ def get_category_dict(name_category):
     return dict_category[name_category]
 
 def get_a_book_link(list_from_all_book):
-    for i in range (len(list_from_all_book)):
+    for i in range(len(list_from_all_book)):
         book_page_focus(list_from_all_book[i])
 
 
 
-
+create_csv_column("data.csv")
 choice = input("quelle catégorie voulez vous récupérer?:\n")
 category_dict = get_category_dict(choice)
 category_url = get_category_url(category_dict)
