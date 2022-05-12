@@ -1,6 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
 import csv
+import urllib.request
 
 #extract all book informations as list of string
 def extract_product_information(elements, choice):
@@ -11,9 +12,6 @@ def extract_product_information(elements, choice):
     elif choice == 2:
         for element in elements:
             result.append(element.string)
-    elif choice == 3:
-        for url in elements:
-            result.append(url['href'])
     return result
 
 #convert "review_rating" from string to number
@@ -38,6 +36,27 @@ def create_csv_column(file_name):
     with open(file_name, 'w', encoding="utf-8") as file_csv:
         writer = csv.writer(file_csv, delimiter=',')
         writer.writerow(column)
+
+def download_img(image_link, title_image):
+    for i in range(len(image_link)):
+        image_url = image_link[i]
+        file_path = 'images/'
+        char_to_replace = {':': '',
+                           '\x5C': '',
+                           '/': '',
+                           '*': '',
+                           '?': '',
+                           '"': '',
+                           '<': '',
+                           '>': '',
+                           '|': ''}
+        image_name = title_image[0].translate(str.maketrans(char_to_replace))
+        file_name = 'image-{}.jpg'.format(image_name)
+        full_path = '{}{}'.format(file_path, file_name)
+        urllib.request.urlretrieve(image_url, full_path)
+
+
+
 
 
 #load all data inside "data.csv" file
@@ -109,8 +128,8 @@ def book_page_focus(book_url, category_from_list):
         number_available = number_available.replace('available)', '')
         number_available = int(number_available)
         number_available = [number_available]
-        #print(number_available)
 
+        download_img(image_url, title)
         load_data(category_from_list, title, universal_product_code, price_including_tax, price_excluding_tax, number_available, product_description, category, image_url, review_rating)
 
 def get_category_url(category):
@@ -140,13 +159,6 @@ def get_category_url(category):
                 category_url_page.append('http://books.toscrape.com/catalogue/category/books/' + current_category + '/page-' + index_page + '.html')
             category_url.append(category_url_page)
     return category_url
-
-
-def create_dict(category_list,category_url):
-    books_dict = {}
-    for i in range(len(category_url)):
-        books_dict[category_list[i]] = category_url[i]
-    return books_dict
 
 
 def get_all_books_from_category(category, list_category):
@@ -192,14 +204,14 @@ def get_category_list():
         link_category = link_category.replace('/index.html', '')
         list_category.append(link_category)
     return list_category
-
+'''
 def get_a_book_link(list_from_all_book):
     #print(list_from_all_book)
     for i in range(len(list_from_all_book)):
         books_from_category = list_from_all_book
         #print(books_from_category)
         book_page_focus(books_from_category)
-
+'''
 
 
 
@@ -207,9 +219,6 @@ def get_a_book_link(list_from_all_book):
 
 category_list = get_category_list()
 category_url = get_category_url(category_list)
-#Create all csv file with "category_list"
-#create_csv_column(category_list)
-category_dict = create_dict(category_list,category_url)
 get_all_books_from_category(category_url, category_list)
 
 
