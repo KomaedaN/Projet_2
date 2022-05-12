@@ -34,7 +34,7 @@ def convert_rating(elements):
 
 def create_csv_column(file_name):
     column = ["title", "universal_product_code", "price_including_tax", "price_excluding_tax", "number_available",
-              "product_description", "category", "image_url", "review_rating"]
+                "product_description", "category", "image_url", "review_rating"]
     with open(file_name, 'w', encoding="utf-8") as file_csv:
         writer = csv.writer(file_csv, delimiter=',')
         writer.writerow(column)
@@ -51,65 +51,67 @@ def load_data(file_name,
               category,
               img,
               rating):
+    #print(file_name)
     with open(file_name, 'a', encoding="utf-8") as file_csv:
         writer = csv.writer(file_csv, delimiter=',')
         for titles, upc, priceI, priceE, stock, text, cate, url, note in zip(title,
-                                                                             UPC,
-                                                                             including,
-                                                                             excluding,
-                                                                             available,
-                                                                             description,
-                                                                             category,
-                                                                             img,
-                                                                             rating):
+                                                                                UPC,
+                                                                                including,
+                                                                                excluding,
+                                                                                available,
+                                                                                description,
+                                                                                category,
+                                                                                img,
+                                                                                rating):
             writer.writerow([titles, upc, priceI, priceE, stock, text, cate, url, note])
 
-def book_page_focus(book_url):
+def book_page_focus(book_url, category_from_list):
     #link of the page
+    for i in range(len(book_url)):
+        url = book_url[i]
+        #print(url)
+        response = requests.get(url)
+        page = response.content
 
-    url = book_url
-    response = requests.get(url)
-    page = response.content
-
-    soup = BeautifulSoup(page, "html.parser")
-    #get all informations from book
-    book_product = soup.select_one("tr:nth-child(1) > td")
-    book_title = soup.find_all("h1")
-    book_price_including_tax = soup.select_one("tr:nth-child(4) > td")
-    book_price_excluding_tax = soup.select_one("tr:nth-child(3) > td")
-    book_number_available = soup.select_one("tr:nth-child(6) > td")
-    book_description = soup.select_one("article > p")
-    book_category = soup.select_one("li:nth-child(3) > a")
-    book_img = soup.find_all('img')
-    book_rating = soup.select_one('article > div.row > div.col-sm-6.product_main > p.star-rating')
-    review_rating = book_rating["class"][1]
+        soup = BeautifulSoup(page, "html.parser")
+        #get all informations from book
+        book_product = soup.select_one("tr:nth-child(1) > td")
+        book_title = soup.find_all("h1")
+        book_price_including_tax = soup.select_one("tr:nth-child(4) > td")
+        book_price_excluding_tax = soup.select_one("tr:nth-child(3) > td")
+        book_number_available = soup.select_one("tr:nth-child(6) > td")
+        book_description = soup.select_one("article > p")
+        book_category = soup.select_one("li:nth-child(3) > a")
+        book_img = soup.find_all('img')
+        book_rating = soup.select_one('article > div.row > div.col-sm-6.product_main > p.star-rating')
+        review_rating = book_rating["class"][1]
 
 
 
-    universal_product_code = extract_product_information(book_product, 2)
-    title = extract_product_information(book_title, 2)
-    price_including_tax = extract_product_information(book_price_including_tax, 2)
-    price_excluding_tax = extract_product_information(book_price_excluding_tax, 2)
-    number_available = extract_product_information(book_number_available, 2)
-    product_description = extract_product_information(book_description, 2)
-    category = extract_product_information(book_category, 2)
-    image_url = extract_product_information(book_img, 1)
-    review_rating = convert_rating(review_rating)
+        universal_product_code = extract_product_information(book_product, 2)
+        title = extract_product_information(book_title, 2)
+        price_including_tax = extract_product_information(book_price_including_tax, 2)
+        price_excluding_tax = extract_product_information(book_price_excluding_tax, 2)
+        number_available = extract_product_information(book_number_available, 2)
+        product_description = extract_product_information(book_description, 2)
+        category = extract_product_information(book_category, 2)
+        image_url = extract_product_information(book_img, 1)
+        review_rating = convert_rating(review_rating)
 
-    #add domain link to "image_url"
-    image_url = image_url[0]
-    image_url = image_url.replace('../..', 'http://books.toscrape.com')
-    image_url = [image_url]
+        #add domain link to "image_url"
+        image_url = image_url[0]
+        image_url = image_url.replace('../..', 'http://books.toscrape.com')
+        image_url = [image_url]
 
-    #remove text from "number_available" and keep number
-    number_available = number_available[0].text
-    number_available = number_available.replace('In stock (', '')
-    number_available = number_available.replace('available)', '')
-    number_available = int(number_available)
-    number_available = [number_available]
-    #print(number_available)
+        #remove text from "number_available" and keep number
+        number_available = number_available[0].text
+        number_available = number_available.replace('In stock (', '')
+        number_available = number_available.replace('available)', '')
+        number_available = int(number_available)
+        number_available = [number_available]
+        #print(number_available)
 
-    load_data("data.csv", title, universal_product_code, price_including_tax, price_excluding_tax, number_available, product_description, category, image_url, review_rating)
+        load_data(category_from_list, title, universal_product_code, price_including_tax, price_excluding_tax, number_available, product_description, category, image_url, review_rating)
 
 def get_category_url(category):
 
@@ -140,19 +142,25 @@ def get_category_url(category):
     return category_url
 
 
+def create_dict(category_list,category_url):
+    books_dict = {}
+    for i in range(len(category_url)):
+        books_dict[category_list[i]] = category_url[i]
+    return books_dict
 
 
-
-def get_all_books_from_category(category):
-
-    links = []
+def get_all_books_from_category(category, list_category):
     for i in range(len(category)):
         url = category[i]
-        #print(url)
+        #print(i)
+        create_csv_column(list_category[i])
+        category_from_list = list_category[i]
+
+        links = []
         for o in range(len(url)):
-            test = url[o]
-            #print(url)
-            response = requests.get(test)
+            page_url = url[o]
+            #print(page_url)
+            response = requests.get(page_url)
             page = response.content
 
             soup = BeautifulSoup(page, 'html.parser')
@@ -164,7 +172,8 @@ def get_all_books_from_category(category):
                 link = link.replace('../../..', 'http://books.toscrape.com/catalogue')
                 links.append(link)
             #print(links)
-    return links
+            book_page_focus(links, category_from_list)
+
 
 
 def get_category_list():
@@ -187,16 +196,21 @@ def get_category_list():
 def get_a_book_link(list_from_all_book):
     #print(list_from_all_book)
     for i in range(len(list_from_all_book)):
-        book_page_focus(list_from_all_book[i])
+        books_from_category = list_from_all_book
+        #print(books_from_category)
+        book_page_focus(books_from_category)
 
 
 
-create_csv_column("data.csv")
+
 #choice = input("quelle catégorie voulez vous récupérer?:\n")
 
 category_list = get_category_list()
 category_url = get_category_url(category_list)
-all_books_from_category = get_all_books_from_category(category_url)
-get_a_book_link(all_books_from_category)
+#Create all csv file with "category_list"
+#create_csv_column(category_list)
+category_dict = create_dict(category_list,category_url)
+get_all_books_from_category(category_url, category_list)
+
 
 
